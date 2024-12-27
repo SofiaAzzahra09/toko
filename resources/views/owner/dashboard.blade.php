@@ -1,8 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-nav-link :href="route('dashboard', ['branchId' => $branch->id_cabang])">
+        {{-- <x-nav-link :href="route('dashboard', ['branchId' => $branch->id_cabang])">
             {{ __('Dashboard') }}
-        </x-nav-link>
+        </x-nav-link> --}}
     </x-slot>
 
     <div class="py-12">

@@ -76,7 +76,9 @@ class TransaksiController extends Controller
     {
         $branch = BranchModel::findOrFail($branchId);
         $transactions = TransaksiModel::with('transaksiDetail.produk.kategori', 'kasir')->get();
-        $pdf = Pdf::loadView('transaksi.index', compact('transactions', 'branch'));
+        $pdf = Pdf::loadView('transaksi.pdf', compact('transactions', 'branch'));
+        
         return $pdf->download('transaksi.pdf');
+        
     }
 }

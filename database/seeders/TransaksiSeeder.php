@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\TransaksiModel;
 use App\Models\UserStore;
+use App\Models\StokModel;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -27,13 +28,22 @@ class TransaksiSeeder extends Seeder
             return;
         }
 
-        $transaksi = TransaksiModel::create([
-            'id_cabang' => $cabangId,
-            'id_kasir' => $kasir->id, 
-            'total_harga' => 10000.00,
-            'total_produk' => 2,
-            'tanggal_transaksi' => now(),
-        ]);
+        $existingTransaksi = TransaksiModel::where('id_cabang', $cabangId)
+                                           ->where('id_kasir', $kasir->id)
+                                           ->whereDate('tanggal_transaksi', now()->toDateString()) 
+                                           ->first();
+
+        if (!$existingTransaksi) {
+            $transaksi = TransaksiModel::create([
+                'id_cabang' => $cabangId,
+                'id_kasir' => $kasir->id, 
+                'total_harga' => 0,
+                'total_produk' => 2,
+                'tanggal_transaksi' => now(),
+            ]);
+        } else {
+            $transaksi = $existingTransaksi;
+        }
 
         $transaksiDetails = [
             [
@@ -41,7 +51,7 @@ class TransaksiSeeder extends Seeder
                 'id_produk' => 1,
                 'jumlah' => 1,
                 'harga_satuan' => 5000.00,
-                'subtotal' => 5000.00,
+                'subtotal' => 5000.00,  
             ],
             [
                 'id_transaksi' => $transaksi->id,
@@ -52,20 +62,54 @@ class TransaksiSeeder extends Seeder
             ],
         ];
 
-        DB::table('transaksi_detail')->insert($transaksiDetails);
+        foreach ($transaksiDetails as $detail) {
+            $existingDetail = DB::table('transaksi_detail')
+                                ->where('id_transaksi', $transaksi->id)
+                                ->where('id_produk', $detail['id_produk'])
+                                ->first();
+            
+            if (!$existingDetail) {
+                DB::table('transaksi_detail')->insert($detail);
+            }
+        }
+
+        $totalHarga = 0;
+        foreach ($transaksiDetails as $detail) {
+            $totalHarga += $detail['subtotal']; 
+        }
+
+        DB::table('transaksi')
+            ->where('id', $transaksi->id)
+            ->update(['total_harga' => $totalHarga]);
 
         $stokChanges = [];
         foreach ($transaksiDetails as $detail) {
-            $stokChanges[] = [
-                'id_cabang' => $cabangId,
-                'id_produk' => $detail['id_produk'],
-                'user_id' => $kasir->id,
-                'jumlah' => -$detail['jumlah'], 
-                'deskripsi' => 'Pengurangan stok karena penjualan',
-                'tanggal_perubahan' => now(),
-            ];
+            $stokProduk = DB::table('stok_produk')
+                            ->where('id_cabang', $cabangId)
+                            ->where('id_produk', $detail['id_produk'])
+                            ->first();
+
+            if ($stokProduk) {
+                $stokChanges[] = [
+                    'id_cabang' => $cabangId,
+                    'id_produk' => $detail['id_produk'],
+                    'user_id' => $kasir->id,
+                    'jumlah' => -$detail['jumlah'], 
+                    'deskripsi' => 'Pengurangan stok karena penjualan',
+                    'tanggal_perubahan' => now(),
+                ];
+
+                DB::table('stok_produk')
+                  ->where('id_cabang', $cabangId)
+                  ->where('id_produk', $detail['id_produk'])
+                  ->update([
+                      'jumlah_stok' => $stokProduk->jumlah_stok - $detail['jumlah'],
+                      'last_updated' => now(),
+                  ]);
+            }
         }
 
+        // Masukkan perubahan stok ke dalam tabel stok_changes
         DB::table('stok_changes')->insert($stokChanges);
     }
 }

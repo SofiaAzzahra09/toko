@@ -20,7 +20,7 @@ class StockExport implements FromCollection
     public function collection()
     {
         return StokModel::where('id_cabang', $this->branchId)
-                    ->with('produk.kategori') 
+                    ->with('produk') 
                     ->get()
                     ->map(function ($stock) {
                         return [

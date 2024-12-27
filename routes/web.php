@@ -31,7 +31,8 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', RoleMiddleware::class . ':owner'])->group(function () {
-    Route::get('/dashboard', [BranchController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [BranchController::class, 'dashboardOwner'])->name('dashboard');
+    
     Route::get('/dashboard/{branchId}', [BranchController::class, 'dashboard'])->name('owner.dashboard');
     Route::get('/stok/{branchId?}', [BranchController::class, 'showStock'])->name('stock.show');
     Route::get('/transaksi/{branchId?}', [BranchController::class, 'showTransaction'])->name('transaction.show');

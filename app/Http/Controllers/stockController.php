@@ -12,13 +12,13 @@ use Maatwebsite\Excel\Facades\Excel;
 class stockController extends Controller
 {
     public function exportPdf($branchId)
-    {
-        $branch = BranchModel::findOrFail($branchId);
-        $stocks = StokModel::where('id_cabang', $branchId)->with('produk', 'kategori')->get();
+{
+    $branch = BranchModel::findOrFail($branchId);
+    $stocks = StokModel::where('id_cabang', $branchId)->with('produk')->get();
 
-        $pdf = Pdf::loadView('stok.pdf', compact('branch', 'stocks'));
-        return $pdf->download('data_stok_' . $branch->alias . '.pdf');
-    }
+    $pdf = Pdf::loadView('stok.pdf', compact('branch', 'stocks'));
+    return $pdf->download('data_stok_' . $branch->alias . '.pdf');
+}
 
     public function exportExcel($branchId)
     {

@@ -6,6 +6,7 @@ use App\Models\BranchModel;
 use App\Models\StokModel;
 use App\Models\TransaksiModel;
 use Illuminate\Http\Request;
+// use App\Models\ProdukModel;
 
 class BranchController extends Controller
 {
@@ -19,6 +20,26 @@ class BranchController extends Controller
     public function index(Request $request)
     {
         return view('dashboard');
+    }
+
+    public function dashboardOwner(Request $request)
+    {
+        $branches = BranchModel::all();
+
+        $branch = null;
+        $totalProduk = 0;
+        $totalPenjualan = 0;
+
+        if ($request->has('id_cabang')) {
+            $branch = BranchModel::find($request->id_cabang);
+
+            if ($branch) {
+                $totalProduk = StokModel::where('id_cabang', $branch->id_cabang)->count();
+                $totalPenjualan = TransaksiModel::where('id_cabang', $branch->id_cabang)->sum('total_harga');
+            }
+        }
+
+        return view('dashboard', compact('branches', 'branch', 'totalProduk', 'totalPenjualan'));
     }
 
     public function dashboard($branchId = null)
