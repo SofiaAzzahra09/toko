@@ -18,6 +18,8 @@
             </div>
 
             <!-- Search Bar and Dropdown -->
+            @auth
+            @if (Auth::user()->hasRole('owner'))
             <div class="flex items-center space-x-4">
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
@@ -31,8 +33,7 @@
                         </button>
                     </x-slot>
 
-                    @auth
-                        @if (Auth::user()->hasRole('owner'))
+                    
                             <x-slot name="content">
                                 <!-- <x-dropdown-link :href="route('dashboard')" :class="(request()->routeIs('dashboard')) ? 'bg-slate-600' : ''">
                                     Pusat

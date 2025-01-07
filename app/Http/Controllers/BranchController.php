@@ -39,6 +39,7 @@ class BranchController extends Controller
             }
         }
 
+        $role = 'owner';
         return view('dashboard', compact('branches', 'branch', 'totalProduk', 'totalPenjualan'));
     }
 
@@ -54,6 +55,61 @@ class BranchController extends Controller
         return view('owner.dashboard', compact('branch')); 
     }
 
+    public function dashboardRole($branchId = null)
+    {
+        $user = auth()->user();
+        $role = strtolower($user->peran ?? ''); 
+
+        dd($role, $user->roles); 
+
+        if (!in_array($role, ['manager', 'supervisor', 'cashier', 'warehouse'])) {
+            abort(403, 'Unauthorized role.');
+        }
+
+        $branchId = $branchId ?? $user->branch_id ?? 1;
+        $branch = BranchModel::findOrFail($branchId);
+        
+        if ($role === 'manager') {
+            return view('manager.dashboard', compact('branch'));
+        } elseif ($role === 'supervisor') {
+            return view('supervisor.dashboard', compact('branch'));
+        } elseif ($role === 'cashier') {
+            return view('cashier.dashboard', compact('branch'));
+        } elseif ($role === 'warehouse') {
+            return view('warehouse.dashboard', compact('branch'));
+        }
+    }
+
+//     public function dashboardRole()
+// {
+//     $user = auth()->user();
+
+//     if (!$user) {
+//         abort(403, 'User not authenticated.');
+//     }
+
+//     // Pastikan 'peran' adalah field yang valid dan sesuai dengan role yang ada
+//     $role = strtolower($user->peran ?? '');
+//     $branchId = $user->id_cabang;
+
+//     // Logika pengalihan berdasarkan role dan branchId
+//     logger("User role: {$role}, Branch ID: {$branchId}");
+
+//     // Role yang valid
+//     $validRoles = ['manager', 'supervisor', 'cashier', 'warehouse'];
+//     if (!in_array($role, $validRoles)) {
+//         abort(403, 'Unauthorized role.');
+//     }
+
+//     $branch = BranchModel::find($branchId);
+//     if (!$branch) {
+//         abort(403, 'Branch not found.');
+//     }
+
+//     return view('manager.dashboard', compact('role', 'branch'));
+// }
+
+
         public function showStock($branchId)
     {
         $branch = BranchModel::findOrFail($branchId);
@@ -63,6 +119,34 @@ class BranchController extends Controller
 
         return view('stok.index', compact('branch', 'stocks'));
     }
+
+    public function redirectDashboard()
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            abort(403, 'User not authenticated.');
+        }
+
+        $role = strtolower($user->peran);  
+        $branchId = $user->id_cabang;     
+
+        switch ($role) {
+            case 'owner':
+                return redirect()->route('dashboard'); 
+            case 'manager':
+            case 'supervisor':
+            case 'cashier':
+            case 'warehouse':
+                if ($branchId) {
+                    return redirect()->route("{$role}.dashboard", ['id_cabang' => $branchId]); 
+                }
+                abort(403, 'Branch not found for the user.');
+            default:
+                abort(403, 'Unauthorized access: unrecognized role.');
+        }
+    }
+
 
         public function showTransaction($branchId)
     {
